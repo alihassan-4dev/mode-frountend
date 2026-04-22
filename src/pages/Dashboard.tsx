@@ -1,0 +1,122 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import AppLayout from "@/components/layout/AppLayout";
+import MoodCard from "@/components/dashboard/MoodCard";
+import StressCard from "@/components/dashboard/StressCard";
+import EnergyCard from "@/components/dashboard/EnergyCard";
+import HealthScoreCard from "@/components/dashboard/HealthScoreCard";
+import MoodJourneyChart from "@/components/dashboard/MoodJourneyChart";
+import PlatformActivityChart from "@/components/dashboard/PlatformActivityChart";
+import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/lib/api";
+import { displayNameFromUser } from "@/lib/utils";
+
+const platformColors: Record<string, string> = {
+  Facebook: "hsl(180,85%,55%)",
+  Instagram: "hsl(330,80%,60%)",
+  Pending: "hsl(262,83%,58%)",
+};
+
+const Dashboard = () => {
+  const { user, session } = useAuth();
+  const name = displayNameFromUser(user);
+  const summaryQuery = useQuery({
+    queryKey: ["dashboard-summary", session?.access_token],
+    queryFn: () => api.dashboardSummary(session!.access_token),
+    enabled: !!session?.access_token,
+    refetchInterval: 30_000,
+  });
+
+  const summary = summaryQuery.data;
+
+  const metricMap = useMemo(() => {
+    const metrics = summary?.metrics ?? [];
+    return {
+      mood: metrics.find((metric) => metric.label.toLowerCase() === "mood score"),
+      stress: metrics.find((metric) => metric.label.toLowerCase() === "stress risk"),
+      readiness: metrics.find((metric) => metric.label.toLowerCase() === "readiness"),
+      connected: metrics.find((metric) => metric.label.toLowerCase() === "connected sources"),
+    };
+  }, [summary?.metrics]);
+
+  const platformData = useMemo(() => {
+    if (!summary) {
+      return [
+        { name: "Facebook", value: 50, color: platformColors.Facebook },
+        { name: "Instagram", value: 35, color: platformColors.Instagram },
+        { name: "Pending", value: 15, color: platformColors.Pending },
+      ];
+    }
+
+    const connectedCount = summary.platform_breakdown.filter((item) => item.connected).length;
+    const total = Math.max(summary.platform_breakdown.length, 1);
+
+    return summary.platform_breakdown.map((item) => ({
+      name: item.platform.charAt(0).toUpperCase() + item.platform.slice(1),
+      value: Math.round((item.connected ? 100 / total : 35 / total) * (connectedCount ? total : 1)),
+      color: platformColors[item.platform.charAt(0).toUpperCase() + item.platform.slice(1)] || platformColors.Pending,
+    }));
+  }, [summary]);
+
+  const lastAnalyzed = useMemo(() => {
+    const latest = summary?.platform_breakdown
+      ?.map((item) => item.last_synced_at)
+      .filter(Boolean)
+      .sort()
+      .at(-1);
+    return latest ? new Date(latest).toLocaleString() : "No platform sync yet";
+  }, [summary?.platform_breakdown]);
+
+  return (
+    <AppLayout>
+      <div className="mb-6">
+        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+          Hey {name} 👋
+        </h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Here's your mental wellness overview
+        </p>
+      </div>
+
+      {summaryQuery.isError && (
+        <div className="glass-card rounded-2xl p-4 mb-4 text-sm text-destructive">
+          Could not load live dashboard data. The original UI is still shown, but check that the backend is running correctly.
+        </div>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
+        <MoodCard
+          score={(metricMap.mood?.value ?? 58) / 10}
+          detail={metricMap.mood?.detail}
+        />
+        <StressCard
+          percentage={metricMap.stress?.value ?? 10}
+          detail={metricMap.stress?.detail}
+        />
+        <EnergyCard
+          energyValue={Math.max(0, Math.min(100, 100 - (metricMap.stress?.value ?? 30)))}
+          label={metricMap.readiness?.trend === "up" ? "Balanced" : undefined}
+        />
+        <HealthScoreCard
+          score={metricMap.readiness?.value ?? 100}
+          label={summary?.recommendations?.[0] || "Optimum stability"}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="lg:col-span-3">
+          <MoodJourneyChart />
+        </div>
+        <div className="lg:col-span-2">
+          <PlatformActivityChart
+            data={platformData}
+            totalLabel={metricMap.connected?.display_value || "0"}
+            lastAnalyzed={lastAnalyzed}
+          />
+        </div>
+      </div>
+    </AppLayout>
+  );
+};
+
+export default Dashboard;
