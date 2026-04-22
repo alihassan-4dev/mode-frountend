@@ -37,7 +37,7 @@ export default function ConnectButton({
         {disconnecting ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Disconnecting…
+            Disconnecting...
           </>
         ) : (
           "Disconnect"
@@ -55,7 +55,7 @@ export default function ConnectButton({
       {connecting ? (
         <>
           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-          Connecting…
+          Connecting...
         </>
       ) : (
         "Connect"

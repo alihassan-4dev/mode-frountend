@@ -100,4 +100,35 @@
   .gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
   }
+  .chat-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+    background-image:
+      radial-gradient(circle at top, hsl(var(--primary) / 0.06), transparent 28%),
+      linear-gradient(180deg, hsl(var(--background) / 0.25), transparent 22%);
+  }
+  .chat-markdown {
+    @apply break-words text-sm leading-7;
+  }
+  .chat-markdown h1,
+  .chat-markdown h2,
+  .chat-markdown h3 {
+    @apply mb-3 font-display font-semibold text-foreground;
+  }
+  .chat-markdown h1 {
+    @apply text-lg;
+  }
+  .chat-markdown h2 {
+    @apply text-base;
+  }
+  .chat-markdown h3 {
+    @apply text-sm;
+  }
+  .chat-markdown p:last-child,
+  .chat-markdown ul:last-child,
+  .chat-markdown ol:last-child,
+  .chat-markdown pre:last-child,
+  .chat-markdown blockquote:last-child {
+    @apply mb-0;
+  }
 }
