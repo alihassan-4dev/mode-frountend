@@ -18,9 +18,16 @@ export interface DashboardMetric {
 export interface PlatformBreakdownItem {
   platform: "facebook" | "instagram";
   connected: boolean;
+  activity_count: number;
   connected_at: string | null;
   last_synced_at: string | null;
   summary: string;
+}
+
+export interface MoodHistoryPoint {
+  date: string;
+  mood: number;
+  energy: number;
 }
 
 export interface DashboardSummary {
@@ -28,6 +35,7 @@ export interface DashboardSummary {
   generated_at: string;
   metrics: DashboardMetric[];
   platform_breakdown: PlatformBreakdownItem[];
+  mood_history: MoodHistoryPoint[];
   recommendations: string[];
 }
 

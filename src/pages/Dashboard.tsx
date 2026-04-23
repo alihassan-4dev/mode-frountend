@@ -14,7 +14,6 @@ import { displayNameFromUser } from "@/lib/utils";
 const platformColors: Record<string, string> = {
   Facebook: "hsl(180,85%,55%)",
   Instagram: "hsl(330,80%,60%)",
-  Pending: "hsl(262,83%,58%)",
 };
 
 const Dashboard = () => {
@@ -41,20 +40,14 @@ const Dashboard = () => {
 
   const platformData = useMemo(() => {
     if (!summary) {
-      return [
-        { name: "Facebook", value: 50, color: platformColors.Facebook },
-        { name: "Instagram", value: 35, color: platformColors.Instagram },
-        { name: "Pending", value: 15, color: platformColors.Pending },
-      ];
+      return [];
     }
-
-    const connectedCount = summary.platform_breakdown.filter((item) => item.connected).length;
-    const total = Math.max(summary.platform_breakdown.length, 1);
 
     return summary.platform_breakdown.map((item) => ({
       name: item.platform.charAt(0).toUpperCase() + item.platform.slice(1),
-      value: Math.round((item.connected ? 100 / total : 35 / total) * (connectedCount ? total : 1)),
-      color: platformColors[item.platform.charAt(0).toUpperCase() + item.platform.slice(1)] || platformColors.Pending,
+      value: item.connected ? item.activity_count : 0,
+      connected: item.connected,
+      color: platformColors[item.platform.charAt(0).toUpperCase() + item.platform.slice(1)] || "hsl(220,10%,65%)",
     }));
   }, [summary]);
 
@@ -86,26 +79,26 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4 md:mb-6">
         <MoodCard
-          score={(metricMap.mood?.value ?? 58) / 10}
+          score={(metricMap.mood?.value ?? 0) / 10}
           detail={metricMap.mood?.detail}
         />
         <StressCard
-          percentage={metricMap.stress?.value ?? 10}
+          percentage={metricMap.stress?.value ?? 0}
           detail={metricMap.stress?.detail}
         />
         <EnergyCard
-          energyValue={Math.max(0, Math.min(100, 100 - (metricMap.stress?.value ?? 30)))}
+          energyValue={metricMap.stress ? Math.max(0, Math.min(100, 100 - metricMap.stress.value)) : 0}
           label={metricMap.readiness?.trend === "up" ? "Balanced" : undefined}
         />
         <HealthScoreCard
-          score={metricMap.readiness?.value ?? 100}
-          label={summary?.recommendations?.[0] || "Optimum stability"}
+          score={metricMap.readiness?.value ?? 0}
+          label={summary?.recommendations?.[0] || "Connect a source to begin"}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
         <div className="lg:col-span-3">
-          <MoodJourneyChart />
+          <MoodJourneyChart data={summary?.mood_history ?? []} />
         </div>
         <div className="lg:col-span-2">
           <PlatformActivityChart

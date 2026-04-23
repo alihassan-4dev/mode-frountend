@@ -5,6 +5,7 @@ type PlatformActivityItem = {
   name: string;
   value: number;
   color: string;
+  connected?: boolean;
 };
 
 type PlatformActivityChartProps = {
@@ -13,18 +14,13 @@ type PlatformActivityChartProps = {
   lastAnalyzed?: string;
 };
 
-const defaultData: PlatformActivityItem[] = [
-  { name: "Facebook", value: 50, color: "hsl(180,85%,55%)" },
-  { name: "Instagram", value: 35, color: "hsl(330,80%,60%)" },
-  { name: "Other", value: 15, color: "hsl(262,83%,58%)" },
-];
-
 const PlatformActivityChart = ({
-  data = defaultData,
-  totalLabel = "2",
+  data = [],
+  totalLabel = "0",
   lastAnalyzed = "Waiting for live sync",
 }: PlatformActivityChartProps) => {
-  const safeData = data.length ? data : defaultData;
+  const chartData = data.filter((item) => item.value > 0);
+  const hasConnectedData = chartData.length > 0;
 
   return (
     <motion.div
@@ -38,23 +34,27 @@ const PlatformActivityChart = ({
 
       <div className="flex flex-col sm:flex-row items-center gap-4">
         <div className="relative w-32 h-32">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={safeData}
-                innerRadius={35}
-                outerRadius={55}
-                dataKey="value"
-                startAngle={90}
-                endAngle={-270}
-                stroke="none"
-              >
-                {safeData.map((entry) => (
-                  <Cell key={entry.name} fill={entry.color} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
+          {hasConnectedData ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={chartData}
+                  innerRadius={35}
+                  outerRadius={55}
+                  dataKey="value"
+                  startAngle={90}
+                  endAngle={-270}
+                  stroke="none"
+                >
+                  {chartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full w-full rounded-full border border-dashed border-border bg-secondary/40" />
+          )}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-[10px] text-muted-foreground">TOTAL</span>
             <span className="text-xl font-display font-bold text-foreground">{totalLabel}</span>
@@ -62,15 +62,22 @@ const PlatformActivityChart = ({
         </div>
 
         <div className="space-y-2 flex-1 w-full">
-          {safeData.map((item) => (
+          {data.map((item) => (
             <div key={item.name} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                 <span className="text-sm text-foreground">{item.name}</span>
               </div>
-              <span className="text-sm font-medium text-foreground">{item.value}%</span>
+              <span className="text-sm font-medium text-foreground">
+                {item.connected ? item.value : 0}
+              </span>
             </div>
           ))}
+          {!data.length && (
+            <p className="rounded-xl border border-dashed border-border bg-secondary/40 px-3 py-2 text-xs text-muted-foreground">
+              No platform connected yet. Connect Facebook or Instagram to start analysis.
+            </p>
+          )}
           <div className="pt-2 border-t border-border">
             <span className="text-[10px] text-muted-foreground">Last analyzed: {lastAnalyzed}</span>
           </div>

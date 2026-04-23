@@ -213,8 +213,8 @@ const Chat = () => {
   };
 
   return (
-    <AppLayout contentClassName="p-0 md:p-6 lg:p-8 md:max-w-7xl md:mx-auto">
-      <section className="glass-card relative flex min-h-[calc(100dvh-3.5rem)] flex-col overflow-hidden rounded-none border-x-0 border-b-0 border-white/50 md:min-h-[calc(100dvh-4rem)] md:rounded-[28px] md:border md:border-white/50">
+    <AppLayout contentClassName="h-[calc(100dvh-3.5rem)] p-0 md:h-dvh md:p-6 lg:p-8 md:max-w-7xl md:mx-auto">
+      <section className="glass-card relative flex h-full min-h-0 flex-col overflow-hidden rounded-none border-x-0 border-b-0 border-white/50 md:rounded-[28px] md:border md:border-white/50">
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-r from-primary/16 via-accent/12 to-transparent" />
         <div className="absolute inset-x-0 top-0 h-[1px] bg-white/60 opacity-80" />
 
@@ -265,7 +265,7 @@ const Chat = () => {
 
         <div
           ref={scrollRef}
-          className="chat-scroll relative flex flex-1 flex-col gap-3 overflow-y-auto px-3 py-4 md:gap-4 md:px-6 md:py-5"
+          className="chat-scroll relative flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-3 py-4 md:gap-4 md:px-6 md:py-5"
         >
           {!messages.length && !messageMutation.isPending && !streamingReply && (
             <div className="flex min-h-[45dvh] items-center justify-center py-6 md:min-h-[50dvh]">
@@ -382,7 +382,7 @@ const Chat = () => {
           )}
         </div>
 
-        <div className="border-t border-border/60 bg-background/88 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:px-5 md:pb-5 md:pt-4">
+        <div className="shrink-0 border-t border-border/60 bg-background/88 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur md:px-5 md:pb-5 md:pt-4">
           {messageMutation.isError && (
             <p className="mb-3 text-sm text-destructive">
               {messageMutation.error instanceof Error

@@ -1,29 +1,16 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import type { MoodHistoryPoint } from "@/lib/api";
 
-const data30 = [
-  { date: "Aug 01", mood: 5, energy: 4 }, { date: "Aug 05", mood: 6, energy: 5 },
-  { date: "Aug 08", mood: 7, energy: 6 }, { date: "Aug 10", mood: 8, energy: 7 },
-  { date: "Aug 13", mood: 6, energy: 5 }, { date: "Aug 16", mood: 4, energy: 3 },
-  { date: "Aug 18", mood: 5, energy: 6 }, { date: "Aug 20", mood: 7, energy: 8 },
-  { date: "Aug 23", mood: 8, energy: 7 }, { date: "Aug 25", mood: 9, energy: 6 },
-  { date: "Aug 28", mood: 7, energy: 5 }, { date: "Aug 30", mood: 6, energy: 7 },
-];
+type MoodJourneyChartProps = {
+  data?: MoodHistoryPoint[];
+};
 
-const data7 = [
-  { date: "Aug 24", mood: 8, energy: 7 },
-  { date: "Aug 25", mood: 9, energy: 6 },
-  { date: "Aug 26", mood: 8, energy: 6 },
-  { date: "Aug 27", mood: 7, energy: 5 },
-  { date: "Aug 28", mood: 7, energy: 5 },
-  { date: "Aug 29", mood: 6, energy: 6 },
-  { date: "Aug 30", mood: 6, energy: 7 },
-];
-
-const MoodJourneyChart = () => {
+const MoodJourneyChart = ({ data = [] }: MoodJourneyChartProps) => {
   const [range, setRange] = useState<"7D" | "30D">("30D");
-  const data = range === "30D" ? data30 : data7;
+  const visibleData = range === "30D" ? data.slice(-30) : data.slice(-7);
+  const hasHistory = visibleData.length > 0;
 
   return (
     <motion.div
@@ -36,7 +23,7 @@ const MoodJourneyChart = () => {
         <div>
           <h3 className="font-display font-semibold text-foreground text-lg">Your Mood Journey</h3>
           <p className="text-xs text-muted-foreground">
-            {range === "30D" ? "30-day psychological fluctuations" : "Last 7 days mood and energy trend"}
+            {hasHistory ? "Real trend from recent chat check-ins" : "No real mood history yet"}
           </p>
         </div>
         <div className="flex bg-secondary rounded-lg p-0.5">
@@ -54,33 +41,41 @@ const MoodJourneyChart = () => {
         </div>
       </div>
       <div className="h-48 md:h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
-            <defs>
-              <linearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(262,83%,58%)" stopOpacity={0.3} />
-                <stop offset="100%" stopColor="hsl(262,83%,58%)" stopOpacity={0} />
-              </linearGradient>
-              <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="hsl(180,85%,55%)" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="hsl(180,85%,55%)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
-            <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} domain={[0, 10]} />
-            <Tooltip
-              contentStyle={{
-                background: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
-                fontSize: 12,
-                color: "hsl(var(--foreground))",
-              }}
-            />
-            <Area type="monotone" dataKey="mood" stroke="hsl(262,83%,58%)" fill="url(#moodGrad)" strokeWidth={2} dot={false} />
-            <Area type="monotone" dataKey="energy" stroke="hsl(180,85%,55%)" fill="url(#energyGrad)" strokeWidth={2} dot={false} />
-          </AreaChart>
-        </ResponsiveContainer>
+        {hasHistory ? (
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={visibleData} margin={{ top: 5, right: 5, bottom: 0, left: -20 }}>
+              <defs>
+                <linearGradient id="moodGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(262,83%,58%)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="hsl(262,83%,58%)" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="energyGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(180,85%,55%)" stopOpacity={0.2} />
+                  <stop offset="100%" stopColor="hsl(180,85%,55%)" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} />
+              <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" tickLine={false} axisLine={false} domain={[0, 10]} />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--card))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "8px",
+                  fontSize: 12,
+                  color: "hsl(var(--foreground))",
+                }}
+              />
+              <Area type="monotone" dataKey="mood" stroke="hsl(262,83%,58%)" fill="url(#moodGrad)" strokeWidth={2} dot={false} />
+              <Area type="monotone" dataKey="energy" stroke="hsl(180,85%,55%)" fill="url(#energyGrad)" strokeWidth={2} dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/40 px-4 text-center">
+            <p className="max-w-sm text-sm leading-6 text-muted-foreground">
+              No past check-ins found. Start chatting with the assistant and this chart will use real mood and energy signals.
+            </p>
+          </div>
+        )}
       </div>
     </motion.div>
   );
