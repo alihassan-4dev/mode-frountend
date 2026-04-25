@@ -90,7 +90,7 @@ const SettingsPage = () => {
             <Shield className="w-5 h-5 text-primary" />
             <h2 className="font-display font-semibold text-foreground">Privacy & Security</h2>
           </div>
-          <p className="text-sm text-muted-foreground">Your data is encrypted and secure 🔒</p>
+          <p className="text-sm text-muted-foreground">Your data is secure 🔒</p>
         </motion.div>
       </div>
     </AppLayout>

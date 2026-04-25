@@ -29,6 +29,22 @@ export function useSocialConnections() {
     },
   });
 
+  const syncMutation = useMutation({
+    mutationFn: (platform: "facebook" | "instagram") =>
+      integrationsApi.data(platform, token),
+    onSuccess: (_data, platform) => {
+      const syncedAtIso = new Date().toISOString();
+      qc.setQueryData<SocialConnection[]>(QUERY_KEY, (current) =>
+        (current ?? []).map((connection) =>
+          connection.platform === platform
+            ? { ...connection, last_synced_at: syncedAtIso }
+            : connection
+        )
+      );
+      qc.invalidateQueries({ queryKey: QUERY_KEY });
+    },
+  });
+
   const getConnection = (
     platform: "facebook" | "instagram"
   ): SocialConnection | undefined =>
@@ -38,9 +54,11 @@ export function useSocialConnections() {
     connections: connectionsQuery.data ?? [],
     isLoading: connectionsQuery.isLoading,
     isError: connectionsQuery.isError,
+    isRefreshing: connectionsQuery.isRefetching,
     refetch: connectionsQuery.refetch,
     connect,
     disconnect: disconnectMutation,
+    sync: syncMutation,
     getConnection,
   };
 }

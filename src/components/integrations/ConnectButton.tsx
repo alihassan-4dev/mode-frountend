@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 
 interface ConnectButtonProps {
   connected: boolean;
   onConnect: () => Promise<void>;
   onDisconnect: () => void;
+  onSync?: () => void;
+  syncing?: boolean;
   disconnecting?: boolean;
 }
 
@@ -13,6 +15,8 @@ export default function ConnectButton({
   connected,
   onConnect,
   onDisconnect,
+  onSync,
+  syncing,
   disconnecting,
 }: ConnectButtonProps) {
   const [connecting, setConnecting] = useState(false);
@@ -28,21 +32,36 @@ export default function ConnectButton({
 
   if (connected) {
     return (
-      <Button
-        onClick={onDisconnect}
-        variant="outline"
-        disabled={disconnecting}
-        className="border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
-      >
-        {disconnecting ? (
-          <>
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Disconnecting...
-          </>
-        ) : (
-          "Disconnect"
-        )}
-      </Button>
+      <div className="flex items-center gap-2">
+        <Button onClick={onSync} variant="secondary" disabled={syncing || disconnecting}>
+          {syncing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Syncing...
+            </>
+          ) : (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Sync
+            </>
+          )}
+        </Button>
+        <Button
+          onClick={onDisconnect}
+          variant="outline"
+          disabled={disconnecting || syncing}
+          className="border-border hover:bg-destructive/10 hover:text-destructive hover:border-destructive"
+        >
+          {disconnecting ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Disconnecting...
+            </>
+          ) : (
+            "Disconnect"
+          )}
+        </Button>
+      </div>
     );
   }
 

@@ -21,6 +21,8 @@ interface PlatformCardProps {
   loading?: boolean;
   onConnect: () => Promise<void>;
   onDisconnect: () => void;
+  onSync: () => void;
+  syncing: boolean;
   disconnecting: boolean;
 }
 
@@ -31,6 +33,8 @@ export default function PlatformCard({
   loading,
   onConnect,
   onDisconnect,
+  onSync,
+  syncing,
   disconnecting,
 }: PlatformCardProps) {
   const connected = !!connection;
@@ -105,6 +109,8 @@ export default function PlatformCard({
         connected={connected}
         onConnect={onConnect}
         onDisconnect={onDisconnect}
+        onSync={onSync}
+        syncing={syncing}
         disconnecting={disconnecting}
       />
     </motion.div>

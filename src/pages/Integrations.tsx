@@ -1,8 +1,9 @@
 import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Info } from "lucide-react";
+import { Info, RefreshCw } from "lucide-react";
 import AppLayout from "@/components/layout/AppLayout";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useSocialConnections } from "@/hooks/useSocialConnections";
 import PlatformCard, {
@@ -55,8 +56,10 @@ const PLATFORMS: PlatformConfig[] = [
 const Integrations = () => {
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isLoading, isError, connect, disconnect, getConnection } =
+  const { isLoading, isError, connect, disconnect, sync, refetch, getConnection } =
     useSocialConnections();
+
+  const connectedPlatforms = PLATFORMS.filter((platform) => getConnection(platform.id));
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -79,12 +82,54 @@ const Integrations = () => {
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
-          Integrations
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Connect your social platforms for cleaner mood analysis and account insights.
-        </p>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground">
+              Integrations
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Connect your social platforms for cleaner mood analysis and account insights.
+            </p>
+          </div>
+          <Button
+            variant="secondary"
+            disabled={!connectedPlatforms.length || sync.isPending}
+            onClick={() => {
+              const platforms = connectedPlatforms.map((platform) => platform.id);
+              Promise.allSettled(platforms.map((platform) => sync.mutateAsync(platform))).then(
+                async (results) => {
+                  const successCount = results.filter(
+                    (result) => result.status === "fulfilled"
+                  ).length;
+                  const failedCount = results.length - successCount;
+                  await refetch();
+                  if (failedCount === 0) {
+                    toast({
+                      title: "Sync complete",
+                      description: "Your integrations are now up to date.",
+                    });
+                    return;
+                  }
+                  if (successCount > 0) {
+                    toast({
+                      title: "Partial sync complete",
+                      description: `${successCount} synced, ${failedCount} failed.`,
+                    });
+                    return;
+                  }
+                  toast({
+                    title: "Sync failed",
+                    description: "Could not refresh integrations.",
+                    variant: "destructive",
+                  });
+                }
+              );
+            }}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${sync.isPending ? "animate-spin" : ""}`} />
+            Sync latest data
+          </Button>
+        </div>
       </div>
 
       {isError && (
@@ -119,6 +164,23 @@ const Integrations = () => {
             index={i}
             loading={isLoading}
             onConnect={() => connect(platform.id)}
+            onSync={() =>
+              sync.mutate(platform.id, {
+                onSuccess: () =>
+                  refetch().then(() =>
+                    toast({
+                      title: `${platform.name} synced`,
+                      description: "Latest platform data has been fetched.",
+                    })
+                  ),
+                onError: () =>
+                  toast({
+                    title: "Sync failed",
+                    description: `Could not sync ${platform.name}.`,
+                    variant: "destructive",
+                  }),
+              })
+            }
             onDisconnect={() => {
               disconnect.mutate(platform.id, {
                 onSuccess: () =>
@@ -130,7 +192,8 @@ const Integrations = () => {
                   }),
               });
             }}
-            disconnecting={disconnect.isPending}
+            syncing={sync.isPending && sync.variables === platform.id}
+            disconnecting={disconnect.isPending && disconnect.variables === platform.id}
           />
         ))}
       </div>
