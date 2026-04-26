@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  LayoutDashboard, MessageCircle, Link2, Settings, Moon, Sun, 
+  LayoutDashboard, MessageCircle, Link2, Settings, Moon, Sun, Newspaper,
   LogOut, Menu, X, ChevronLeft, ChevronRight, Sparkles
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
@@ -12,6 +12,7 @@ const navItems = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/chat", label: "Chat", icon: MessageCircle },
   { path: "/integrations", label: "Integrations", icon: Link2 },
+  { path: "/social-posts", label: "Social Posts", icon: Newspaper },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -36,13 +37,9 @@ const Sidebar = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent" />
           </div>
           {showLabels && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="font-display font-bold text-lg text-foreground tracking-tight"
-            >
+            <span className="font-display font-bold text-lg text-foreground tracking-tight">
               Counseling Corner
-            </motion.span>
+            </span>
           )}
         </Link>
       </div>

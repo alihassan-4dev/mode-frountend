@@ -64,6 +64,38 @@ export interface ChatResponse {
   used_tools: string[];
 }
 
+export interface PostAiAnalysis {
+  sentiment_label: "positive" | "neutral" | "negative";
+  sentiment_score: number;
+  engagement_quality: "low" | "medium" | "high";
+  recommendation: string;
+}
+
+export interface SocialPost {
+  platform: "facebook" | "instagram";
+  post_id: string;
+  text: string | null;
+  created_at: string | null;
+  permalink: string | null;
+  media_type: string | null;
+  media_url: string | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  analysis: PostAiAnalysis | null;
+}
+
+export interface SocialPostsResponse {
+  posts: SocialPost[];
+  meta: {
+    platform: "facebook" | "instagram";
+    count: number;
+    limit: number;
+    next_cursor: string | null;
+    fetched_at: string;
+    notice?: string | null;
+  };
+}
+
 function baseUrl(): string {
   return (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 }
@@ -182,6 +214,14 @@ export const api = {
       body: JSON.stringify(body),
       accessToken,
     }),
+  socialPosts: (accessToken: string, params: { platform: "facebook" | "instagram"; limit?: number; cursor?: string }) => {
+    const searchParams = new URLSearchParams({ platform: params.platform });
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.cursor) searchParams.set("cursor", params.cursor);
+    return apiFetch<SocialPostsResponse>(`/api/social-posts?${searchParams.toString()}`, {
+      accessToken,
+    });
+  },
 };
 
 // Re-export integration API for convenience

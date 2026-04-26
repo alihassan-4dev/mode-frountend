@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import type { MoodHistoryPoint } from "@/lib/api";
@@ -9,7 +9,18 @@ type MoodJourneyChartProps = {
 
 const MoodJourneyChart = ({ data = [] }: MoodJourneyChartProps) => {
   const [range, setRange] = useState<"7D" | "30D">("30D");
-  const visibleData = range === "30D" ? data.slice(-30) : data.slice(-7);
+  const visibleData = useMemo(() => {
+    const now = new Date();
+    const days = range === "30D" ? 30 : 7;
+    const cutoff = new Date(now);
+    cutoff.setDate(now.getDate() - days);
+    return data
+      .filter((point) => {
+        const parsed = new Date(point.date);
+        return !Number.isNaN(parsed.getTime()) && parsed >= cutoff;
+      })
+      .slice(-days);
+  }, [data, range]);
   const hasHistory = visibleData.length > 0;
 
   return (

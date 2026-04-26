@@ -36,6 +36,37 @@ describe("api client", () => {
 
     await expect(api.me("bad-token")).rejects.toBeInstanceOf(ApiError);
   });
+
+  it("builds social posts query and returns payload", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          posts: [],
+          meta: {
+            platform: "facebook",
+            count: 0,
+            limit: 10,
+            next_cursor: null,
+            fetched_at: new Date().toISOString(),
+          },
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        }
+      )
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await api.socialPosts("token", { platform: "facebook", limit: 10 });
+    expect(result.meta.platform).toBe("facebook");
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/social-posts?platform=facebook&limit=10"),
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
 });
 
 describe("displayNameFromUser", () => {

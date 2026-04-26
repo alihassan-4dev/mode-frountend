@@ -14,6 +14,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Dashboard from "./pages/Dashboard";
 import Chat from "./pages/Chat";
 import Integrations from "./pages/Integrations";
+import SocialPosts from "./pages/SocialPosts";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -75,6 +76,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Integrations />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/social-posts"
+                element={
+                  <ProtectedRoute>
+                    <SocialPosts />
                   </ProtectedRoute>
                 }
               />

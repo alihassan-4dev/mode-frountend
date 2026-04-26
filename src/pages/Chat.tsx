@@ -6,14 +6,23 @@ import {
   RefreshCw,
   RotateCcw,
   Send,
+  Smile,
   Sparkles,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import AppLayout from "@/components/layout/AppLayout";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError, api, type ChatMessage } from "@/lib/api";
 
 const CHAT_SESSION_STORAGE_KEY = "mode-active-chat-session";
+const CHAT_SERVER_SESSION_FLAG_KEY = "mode-active-chat-session-server";
+const EMOJI_OPTIONS = [
+  "🙂", "😊", "😄", "😁", "🤗", "💙", "✨", "🌿",
+  "🫶", "🙏", "🧠", "💪", "🎯", "📝", "📌", "🌞",
+  "😌", "😎", "😅", "🤔", "🥹", "😴", "😔", "😤",
+  "❤️", "🔥", "🎉", "☕", "🌈", "🚀", "📚", "🫂",
+];
 
 function createSessionId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -32,8 +41,8 @@ function AssistantMessage({ content }: { content: string }) {
         li: ({ children }) => <li>{children}</li>,
         strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
         em: ({ children }) => <em className="italic">{children}</em>,
-        code: ({ inline, children }) =>
-          inline ? (
+        code: ({ children, ...props }) =>
+          (props as { inline?: boolean }).inline ? (
             <code className="rounded-md bg-secondary px-1.5 py-0.5 font-mono text-[0.85em] text-foreground">
               {children}
             </code>
@@ -78,9 +87,16 @@ const Chat = () => {
     }
     return window.localStorage.getItem(CHAT_SESSION_STORAGE_KEY) || createSessionId();
   });
+  const [hasServerSession, setHasServerSession] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return false;
+    }
+    return window.localStorage.getItem(CHAT_SERVER_SESSION_FLAG_KEY) === "1";
+  });
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streamingReply, setStreamingReply] = useState<ChatMessage | null>(null);
   const [streamingText, setStreamingText] = useState("");
+  const [emojiOpen, setEmojiOpen] = useState(false);
 
   const sessionDetailQuery = useQuery({
     queryKey: ["chat-session", token, activeSessionId],
@@ -94,7 +110,7 @@ const Chat = () => {
         throw error;
       }
     },
-    enabled: !!token,
+    enabled: !!token && hasServerSession,
     staleTime: 30_000,
   });
 
@@ -106,8 +122,12 @@ const Chat = () => {
       }),
     onSuccess: (response) => {
       setActiveSessionId(response.session.id);
-      setMessages(response.session.messages.filter((item) => item.id !== response.reply.id));
-      setStreamingReply(response.reply);
+      setHasServerSession(true);
+      const sessionMessages = response.session.messages ?? [];
+      const hasReply = sessionMessages.some((item) => item.id === response.reply.id);
+      const nextMessages = hasReply ? sessionMessages : [...sessionMessages, response.reply];
+      setMessages(nextMessages);
+      setStreamingReply(null);
       setStreamingText("");
       queryClient.setQueryData(["chat-session", token, response.session.id], response.session);
     },
@@ -121,45 +141,31 @@ const Chat = () => {
   useEffect(() => {
     if (typeof window !== "undefined") {
       window.localStorage.setItem(CHAT_SESSION_STORAGE_KEY, activeSessionId);
+      window.localStorage.setItem(CHAT_SERVER_SESSION_FLAG_KEY, hasServerSession ? "1" : "0");
     }
-  }, [activeSessionId]);
+  }, [activeSessionId, hasServerSession]);
 
   useEffect(() => {
+    if (!hasServerSession) {
+      setMessages([]);
+      return;
+    }
     if (messageMutation.isPending || streamingReply) {
       return;
     }
     setMessages(sessionDetailQuery.data?.messages ?? []);
-  }, [messageMutation.isPending, sessionDetailQuery.data, streamingReply]);
+  }, [hasServerSession, messageMutation.isPending, sessionDetailQuery.data, streamingReply]);
 
   useEffect(() => {
-    if (!streamingReply) {
+    if (!hasServerSession || messageMutation.isPending || streamingReply) {
       return;
     }
-
-    const fullText = streamingReply.content;
-    if (!fullText) {
-      setMessages((current) => [...current, streamingReply]);
-      setStreamingReply(null);
-      setStreamingText("");
-      return;
+    if (sessionDetailQuery.data === null) {
+      // Session id was stale in local storage or manually reset; wait until next POST /chat/message creates it.
+      setHasServerSession(false);
+      setMessages([]);
     }
-
-    let index = 0;
-    const step = Math.max(1, Math.ceil(fullText.length / 48));
-    const timer = window.setInterval(() => {
-      index = Math.min(fullText.length, index + step);
-      setStreamingText(fullText.slice(0, index));
-
-      if (index >= fullText.length) {
-        window.clearInterval(timer);
-        setMessages((current) => [...current, streamingReply]);
-        setStreamingReply(null);
-        setStreamingText("");
-      }
-    }, 24);
-
-    return () => window.clearInterval(timer);
-  }, [streamingReply]);
+  }, [hasServerSession, messageMutation.isPending, sessionDetailQuery.data, streamingReply]);
 
   useEffect(() => {
     const container = scrollRef.current;
@@ -185,6 +191,7 @@ const Chat = () => {
     const previousSessionId = activeSessionId;
     const nextSessionId = createSessionId();
     setActiveSessionId(nextSessionId);
+    setHasServerSession(false);
     setMessages([]);
     setStreamingReply(null);
     setStreamingText("");
@@ -210,6 +217,12 @@ const Chat = () => {
     } catch {
       // Error UI is handled by the mutation state and refetch path.
     }
+  };
+
+  const insertEmoji = (emoji: string) => {
+    setDraft((current) => `${current}${current.endsWith(" ") || current.length === 0 ? "" : " "}${emoji} `);
+    setEmojiOpen(false);
+    textareaRef.current?.focus();
   };
 
   return (
@@ -407,14 +420,43 @@ const Chat = () => {
                 placeholder="Type your message..."
                 className="max-h-40 min-h-[52px] w-full resize-none rounded-[20px] bg-transparent px-3 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
               />
-              <button
-                onClick={() => void submit()}
-                disabled={!draft.trim() || isBusy}
-                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-transform disabled:opacity-50 sm:w-auto sm:min-w-[112px]"
-              >
-                <Send className="h-4 w-4" />
-                {isBusy ? "Working..." : "Send"}
-              </button>
+              <div className="flex w-full gap-2 sm:w-auto">
+                <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] border border-border bg-background text-foreground transition-colors hover:bg-secondary"
+                      aria-label="Open emoji picker"
+                    >
+                      <Smile className="h-5 w-5" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="end" className="w-[288px] p-3">
+                    <p className="mb-2 text-xs font-medium text-muted-foreground">Choose an emoji</p>
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {EMOJI_OPTIONS.map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => insertEmoji(emoji)}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-lg transition-colors hover:bg-secondary"
+                          aria-label={`Use emoji ${emoji}`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <button
+                  onClick={() => void submit()}
+                  disabled={!draft.trim() || isBusy}
+                  className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[20px] bg-primary px-4 text-sm font-medium text-primary-foreground shadow-lg shadow-primary/20 transition-transform disabled:opacity-50 sm:w-auto sm:min-w-[112px]"
+                >
+                  <Send className="h-4 w-4" />
+                  {isBusy ? "Working..." : "Send"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
