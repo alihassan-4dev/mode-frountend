@@ -21,10 +21,9 @@ function sentimentBadgeVariant(label: string): "default" | "secondary" | "destru
 const SocialPosts = () => {
   const [platform, setPlatform] = useState<Platform>("facebook");
   const connections = useSocialConnections();
-  const postsQuery = useSocialPosts(platform, 10);
-
   const activeConnection = connections.getConnection(platform);
   const isConnected = !!activeConnection;
+  const postsQuery = useSocialPosts(platform, 10, isConnected);
   const posts = postsQuery.data?.posts ?? [];
 
   const lastFetchedLabel = useMemo(() => {

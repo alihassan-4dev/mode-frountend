@@ -120,6 +120,7 @@ const Chat = () => {
         message,
         session_id: activeSessionId,
       }),
+    retry: 1,
     onSuccess: (response) => {
       setActiveSessionId(response.session.id);
       setHasServerSession(true);
@@ -132,7 +133,18 @@ const Chat = () => {
       queryClient.setQueryData(["chat-session", token, response.session.id], response.session);
     },
     onError: () => {
-      void sessionDetailQuery.refetch();
+      setStreamingReply(null);
+      setStreamingText("");
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-fallback-${Date.now()}`,
+          role: "assistant",
+          content:
+            "I hit a temporary issue while generating that reply. Please try once more. If this keeps happening, check your AI provider key/quota and internet connection.",
+          created_at: new Date().toISOString(),
+        },
+      ]);
     },
   });
 
@@ -146,26 +158,19 @@ const Chat = () => {
   }, [activeSessionId, hasServerSession]);
 
   useEffect(() => {
-    if (!hasServerSession) {
-      setMessages([]);
+    // Hydrate from server only when entering an existing session with no local messages loaded yet.
+    if (!hasServerSession || !sessionDetailQuery.isSuccess) {
       return;
     }
-    if (messageMutation.isPending || streamingReply) {
-      return;
-    }
-    setMessages(sessionDetailQuery.data?.messages ?? []);
-  }, [hasServerSession, messageMutation.isPending, sessionDetailQuery.data, streamingReply]);
-
-  useEffect(() => {
-    if (!hasServerSession || messageMutation.isPending || streamingReply) {
+    if (messages.length > 0) {
       return;
     }
     if (sessionDetailQuery.data === null) {
-      // Session id was stale in local storage or manually reset; wait until next POST /chat/message creates it.
       setHasServerSession(false);
-      setMessages([]);
+      return;
     }
-  }, [hasServerSession, messageMutation.isPending, sessionDetailQuery.data, streamingReply]);
+    setMessages(sessionDetailQuery.data.messages ?? []);
+  }, [hasServerSession, messages.length, sessionDetailQuery.data, sessionDetailQuery.isSuccess]);
 
   useEffect(() => {
     const container = scrollRef.current;
