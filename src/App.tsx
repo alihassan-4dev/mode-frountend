@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Chat from "./pages/Chat";
 import Integrations from "./pages/Integrations";
 import SocialPosts from "./pages/SocialPosts";
+import Reports from "./pages/Reports";
 import SettingsPage from "./pages/SettingsPage";
 import NotFound from "./pages/NotFound";
 
@@ -84,6 +85,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <SocialPosts />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <Reports />
                   </ProtectedRoute>
                 }
               />

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import type { MoodHistoryPoint } from "@/lib/api";
@@ -8,19 +8,12 @@ type MoodJourneyChartProps = {
 };
 
 const MoodJourneyChart = ({ data = [] }: MoodJourneyChartProps) => {
-  const [range, setRange] = useState<"7D" | "30D">("30D");
   const visibleData = useMemo(() => {
-    const now = new Date();
-    const days = range === "30D" ? 30 : 7;
-    const cutoff = new Date(now);
-    cutoff.setDate(now.getDate() - days);
-    return data
-      .filter((point) => {
-        const parsed = new Date(point.date);
-        return !Number.isNaN(parsed.getTime()) && parsed >= cutoff;
-      })
-      .slice(-days);
-  }, [data, range]);
+    return data.filter((point) => {
+      const parsed = new Date(point.date);
+      return !Number.isNaN(parsed.getTime());
+    });
+  }, [data]);
   const hasHistory = visibleData.length > 0;
 
   return (
@@ -30,26 +23,11 @@ const MoodJourneyChart = ({ data = [] }: MoodJourneyChartProps) => {
       transition={{ delay: 0.5 }}
       className="glass-card rounded-2xl p-4 md:p-6"
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-        <div>
-          <h3 className="font-display font-semibold text-foreground text-lg">Your Mood Journey</h3>
-          <p className="text-xs text-muted-foreground">
-            {hasHistory ? "Real trend from recent chat check-ins" : "No real mood history yet"}
-          </p>
-        </div>
-        <div className="flex bg-secondary rounded-lg p-0.5">
-          {(["7D", "30D"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={`px-3 py-1 text-xs font-medium rounded-md transition-all ${
-                range === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {r}
-            </button>
-          ))}
-        </div>
+      <div className="mb-4">
+        <h3 className="font-display font-semibold text-foreground text-lg">Your Mood Journey</h3>
+        <p className="text-xs text-muted-foreground">
+          {hasHistory ? "Real trend from recent chat check-ins" : "No real mood history yet"}
+        </p>
       </div>
       <div className="h-48 md:h-56">
         {hasHistory ? (

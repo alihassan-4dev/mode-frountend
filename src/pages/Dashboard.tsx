@@ -107,7 +107,7 @@ const Dashboard = () => {
             <div className="glass-card rounded-2xl p-5 md:p-6">
               <h3 className="font-display font-semibold text-foreground text-lg">Your Mood Journey</h3>
               <p className="mt-2 text-sm text-muted-foreground">
-                No real mood analytics yet. Start short daily check-ins in chat, then 7D/30D trend will appear automatically.
+                No real mood analytics yet. Start short daily check-ins in chat, then your trend will appear automatically.
               </p>
             </div>
           )}

@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LayoutDashboard, MessageCircle, Link2, Settings, Moon, Sun, Newspaper,
-  LogOut, Menu, X, ChevronLeft, ChevronRight, Sparkles
+  LogOut, Menu, X, ChevronLeft, ChevronRight, Sparkles, BarChart3
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
@@ -13,6 +13,7 @@ const navItems = [
   { path: "/chat", label: "Chat", icon: MessageCircle },
   { path: "/integrations", label: "Integrations", icon: Link2 },
   { path: "/social-posts", label: "Social Posts", icon: Newspaper },
+  { path: "/reports", label: "Reports", icon: BarChart3 },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

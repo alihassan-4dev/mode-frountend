@@ -96,6 +96,52 @@ export interface SocialPostsResponse {
   };
 }
 
+export interface PostReport {
+  platform: "facebook" | "instagram";
+  post_id: string;
+  post_text: string | null;
+  permalink: string | null;
+  media_type: string | null;
+  media_url: string | null;
+  post_created_at: string | null;
+  likes_count: number | null;
+  comments_count: number | null;
+  sentiment_label: string | null;
+  sentiment_score: number | null;
+  engagement_quality: string | null;
+  engagement_score: number | null;
+  recommendation: string | null;
+  summary: string | null;
+  tone: string | null;
+  topics: string[];
+  strengths: string[];
+  weaknesses: string[];
+  generated_at: string;
+  updated_at: string;
+}
+
+export interface PlatformOverview {
+  platform: "facebook" | "instagram";
+  total_posts: number;
+  avg_sentiment: number;
+  total_likes: number;
+  total_comments: number;
+  positive: number;
+  neutral: number;
+  negative: number;
+}
+
+export interface ReportsResponse {
+  user_id: string;
+  generated_at: string;
+  refresh_interval_minutes: number;
+  next_refresh_at: string | null;
+  facebook: PostReport[];
+  instagram: PostReport[];
+  overall: PlatformOverview[];
+  overall_recommendation: string | null;
+}
+
 function baseUrl(): string {
   return (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 }
@@ -214,6 +260,10 @@ export const api = {
       body: JSON.stringify(body),
       accessToken,
     }),
+  reports: (accessToken: string) =>
+    apiFetch<ReportsResponse>("/api/reports", { accessToken }),
+  reportsRefresh: (accessToken: string) =>
+    apiFetch<ReportsResponse>("/api/reports/refresh", { method: "POST", accessToken }),
   socialPosts: (accessToken: string, params: { platform: "facebook" | "instagram"; limit?: number; cursor?: string }) => {
     const searchParams = new URLSearchParams({ platform: params.platform });
     if (params.limit) searchParams.set("limit", String(params.limit));
