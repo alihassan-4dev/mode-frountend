@@ -7,6 +7,7 @@ import EnergyCard from "@/components/dashboard/EnergyCard";
 import HealthScoreCard from "@/components/dashboard/HealthScoreCard";
 import MoodJourneyChart from "@/components/dashboard/MoodJourneyChart";
 import PlatformActivityChart from "@/components/dashboard/PlatformActivityChart";
+import ModeCard from "@/components/mode/ModeCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { api } from "@/lib/api";
 import { displayNameFromUser } from "@/lib/utils";
@@ -24,6 +25,12 @@ const Dashboard = () => {
     queryFn: () => api.dashboardSummary(session!.access_token),
     enabled: !!session?.access_token,
     refetchInterval: 30_000,
+  });
+  const modeQuery = useQuery({
+    queryKey: ["dashboard-mode", session?.access_token],
+    queryFn: () => api.modeOverview(session!.access_token),
+    enabled: !!session?.access_token,
+    refetchInterval: 60_000,
   });
 
   const summary = summaryQuery.data;
@@ -97,6 +104,26 @@ const Dashboard = () => {
           score={metricMap.readiness?.value ?? 0}
           label={summary?.recommendations?.[0] || "Connect a source to begin"}
         />
+      </div>
+
+      <div className="mb-4 md:mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-display font-semibold text-foreground">Your mode read</h2>
+          <span className="text-xs text-muted-foreground">
+            {modeQuery.data ? "Decided by AI from your recent posts" : "No mode read yet"}
+          </span>
+        </div>
+        {modeQuery.data ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+            <ModeCard summary={modeQuery.data.current} delay={0.05} />
+            <ModeCard summary={modeQuery.data.weekly} delay={0.1} />
+            <ModeCard summary={modeQuery.data.monthly} delay={0.15} />
+          </div>
+        ) : (
+          <div className="glass-card rounded-2xl p-5 text-sm text-muted-foreground">
+            Connect Facebook or Instagram, then post a few times. Mode decides your weekly &amp; monthly state from the AI report on each post.
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">

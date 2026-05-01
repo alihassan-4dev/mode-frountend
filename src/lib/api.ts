@@ -96,6 +96,29 @@ export interface SocialPostsResponse {
   };
 }
 
+export interface ModeDistributionItem {
+  label: string;
+  share: number;
+  count: number;
+}
+
+export interface ModeSummary {
+  period: "current" | "weekly" | "monthly";
+  window_days: number | null;
+  post_count: number;
+  mode_label: string | null;
+  mode_vibe: "uplifted" | "balanced" | "strained" | null;
+  confidence: number;
+  distribution: ModeDistributionItem[];
+  narrative: string;
+}
+
+export interface ModeOverviewResponse {
+  current: ModeSummary;
+  weekly: ModeSummary;
+  monthly: ModeSummary;
+}
+
 export interface PostReport {
   platform: "facebook" | "instagram";
   post_id: string;
@@ -116,6 +139,9 @@ export interface PostReport {
   topics: string[];
   strengths: string[];
   weaknesses: string[];
+  mode_label: string | null;
+  mode_confidence: number | null;
+  mode_drivers: string[];
   generated_at: string;
   updated_at: string;
 }
@@ -140,6 +166,9 @@ export interface ReportsResponse {
   instagram: PostReport[];
   overall: PlatformOverview[];
   overall_recommendation: string | null;
+  current_mode: ModeSummary;
+  weekly_mode: ModeSummary;
+  monthly_mode: ModeSummary;
 }
 
 function baseUrl(): string {
@@ -264,6 +293,8 @@ export const api = {
     apiFetch<ReportsResponse>("/api/reports", { accessToken }),
   reportsRefresh: (accessToken: string) =>
     apiFetch<ReportsResponse>("/api/reports/refresh", { method: "POST", accessToken }),
+  modeOverview: (accessToken: string) =>
+    apiFetch<ModeOverviewResponse>("/api/reports/mode", { accessToken }),
   socialPosts: (accessToken: string, params: { platform: "facebook" | "instagram"; limit?: number; cursor?: string }) => {
     const searchParams = new URLSearchParams({ platform: params.platform });
     if (params.limit) searchParams.set("limit", String(params.limit));

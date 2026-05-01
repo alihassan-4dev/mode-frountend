@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
+import ModeCard, { ModeBadge } from "@/components/mode/ModeCard";
 import { api, type PostReport } from "@/lib/api";
 
 type Platform = "facebook" | "instagram";
@@ -70,6 +71,18 @@ function PostReportCard({ report }: { report: PostReport }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <ModeBadge
+              label={report.mode_label}
+              vibe={
+                report.mode_label
+                  ? ["Stressed", "Anxious", "Burned-out", "Withdrawn"].includes(report.mode_label)
+                    ? "strained"
+                    : ["Calm", "Focused", "Reflective"].includes(report.mode_label)
+                      ? "balanced"
+                      : "uplifted"
+                  : null
+              }
+            />
             <Badge variant={sentimentVariant(report.sentiment_label)}>
               {report.sentiment_label ?? "neutral"}
             </Badge>
@@ -78,7 +91,18 @@ function PostReportCard({ report }: { report: PostReport }) {
             <span className="text-xs text-muted-foreground">
               Score: {(report.sentiment_score ?? 0).toFixed(2)}
             </span>
+            {typeof report.mode_confidence === "number" && (
+              <span className="text-xs text-muted-foreground">
+                Mode conf: {Math.round(report.mode_confidence * 100)}%
+              </span>
+            )}
           </div>
+
+          {report.mode_drivers.length > 0 && (
+            <div className="text-xs text-muted-foreground">
+              Mode drivers: {report.mode_drivers.join(" · ")}
+            </div>
+          )}
 
           {report.summary && (
             <p className="text-sm text-foreground/90">
@@ -207,6 +231,14 @@ const Reports = () => {
       {reportsQuery.isError && (
         <div className="glass-card rounded-2xl p-5 text-sm text-destructive">
           Could not load reports. Please retry in a moment.
+        </div>
+      )}
+
+      {reports && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-5">
+          <ModeCard summary={reports.current_mode} delay={0.05} />
+          <ModeCard summary={reports.weekly_mode} delay={0.1} />
+          <ModeCard summary={reports.monthly_mode} delay={0.15} />
         </div>
       )}
 
