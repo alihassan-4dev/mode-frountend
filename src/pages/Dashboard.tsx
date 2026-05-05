@@ -129,7 +129,10 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 md:gap-4">
         <div className="lg:col-span-3">
           {hasRealMoodAnalytics ? (
-            <MoodJourneyChart data={summary?.mood_history ?? []} />
+            <MoodJourneyChart
+              data={summary?.mood_history ?? []}
+              currentMoodScore={(metricMap.mood?.value ?? 0) / 10}
+            />
           ) : (
             <div className="glass-card rounded-2xl p-5 md:p-6">
               <h3 className="font-display font-semibold text-foreground text-lg">Your Mood Journey</h3>
